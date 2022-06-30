@@ -3,6 +3,9 @@ uuid = "1989e0ef-b035-4793-b6cd-86d79d787dd6"
 authors = ["Arnold"]
 version = "0.1.0"
 
+[deps]
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+
 [compat]
 julia = "1.7"
 
