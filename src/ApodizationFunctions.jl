@@ -1,5 +1,20 @@
 module ApodizationFunctions
 
+using DSP
+
+export  RectApodization,
+        HanningApodization,
+        HammingApodization,
+        CosineApodization,
+        LanczosApodization,
+        TriangApodization,
+        BartlettApodization,
+        BartlettHannApodization,
+        BlackmanApodization,
+        TukeyApodization,
+        GaussianApodization,
+        KaiserApodization
+
 abstract type ApodizationFunction end
 
 for func in (:rect, :hanning, :hamming, :cosine, :lanczos, :triang, :bartlett, :bartlett_hann, :blackman)
