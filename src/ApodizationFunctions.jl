@@ -2,20 +2,27 @@ module ApodizationFunctions
 
 using DSP
 
-export  RectApodization,
-        HanningApodization,
-        HammingApodization,
-        CosineApodization,
-        LanczosApodization,
-        TriangApodization,
-        BartlettApodization,
-        BartlettHannApodization,
-        BlackmanApodization,
-        TukeyApodization,
-        GaussianApodization,
-        KaiserApodization
+export apodfunc,
+    RectApodization,
+    HanningApodization,
+    HammingApodization,
+    CosineApodization,
+    LanczosApodization,
+    TriangApodization,
+    BartlettApodization,
+    BartlettHannApodization,
+    BlackmanApodization,
+    TukeyApodization,
+    GaussianApodization,
+    KaiserApodization
 
 abstract type AbstractApodizationFunction end
+
+weights(apod::AbstractApodizationFunction) = apod.weights
+
+apodfunc(a::Symbol, sz; kwargs...) = apodfunc(Val{a}(), sz; kwargs...) # Val{a}() causes type unstability
+
+apodfunc(a::Symbol, sz, par; kwargs...) = apodfunc(Val{a}(), sz, par; kwargs...)
 
 for func in (:rect, :hanning, :hamming, :cosine, :lanczos, :triang, :bartlett, :bartlett_hann, :blackman)
     st = string(func)
@@ -24,9 +31,8 @@ for func in (:rect, :hanning, :hamming, :cosine, :lanczos, :triang, :bartlett, :
     @eval begin
         """
             $(string($sname))(sz; kwargs...)
-        Create an apodization function `$(string($sname))` up to 3 dimensions,
-        with size `sz` defined as a single `Int` (1-dimensionnal) or a tuple of 
-        `Int`.
+        Create a N-dimensionnal apodization function `$(string($sname))`, with 
+        size `sz` defined as a single `Int` (1-dimensionnal) or a tuple of `Int`.
 
         For `kwargs` definitions see `$($st)` function in package 
         `DSP.jl`.
@@ -51,17 +57,22 @@ for func in (:rect, :hanning, :hamming, :cosine, :lanczos, :triang, :bartlett, :
 
         $sname(sz::NTuple{2, Int}; kwargs...) = $sname(DSP.$func(sz; kwargs...))
 
-        function $sname(sz::NTuple{3, Int}; kwargs...)
-            w2d = $sname(sz[1:2]; kwargs...).weights
-            w3d = $sname(sz[end]; kwargs...).weights
-            w = zeros(size(w2d)..., size(w3d)...)
-            for k in 1:sz[end]
-                @inbounds @. w[:,:,k] = w2d * w3d[k]
+        function $sname(sz::NTuple{N, Int}; kwargs...) where {N}
+            # weights for the first dimensions
+            wfd = weights($sname(sz[1:N - 1]; kwargs...))
+            # weights for the last dimension
+            wld = weights($sname(sz[end]; kwargs...))
+            w = zeros(size(wfd)..., size(wld)...)
+            for i in 1:sz[end]
+                v = selectdim(w, N, i)
+                @inbounds @. v = wfd * wld[i]
             end
             $sname(w)
         end
 
-        (apod::$sname)(A) = @. apod.weights * A
+        (apod::$sname)(A) = weights(apod) .* A
+
+        apodfunc(::Val{Symbol($st)}, sz; kwargs...) = $sname(sz; kwargs...)
     end
 end
 
@@ -71,9 +82,8 @@ for func in (:tukey, :gaussian, :kaiser)
     @eval begin
         """
             $(string($sname))(sz, par; kwargs...)
-        Create an apodization function `$(string($sname))` up to 3 dimensions,
-        with size `sz` defined as a single `Int` (1-dimensionnal) or a tuple of 
-        `Int`.
+        Create a a N-dimensionnal apodization function `$(string($sname))`, with
+        size `sz` defined as a single `Int` (1-dimensionnal) or a tuple of `Int`.
 
         For `par` and `kwargs` definitions see `$($st)` function in package 
         `DSP.jl`.
@@ -98,17 +108,22 @@ for func in (:tukey, :gaussian, :kaiser)
 
         $sname(sz::NTuple{2, Int}, par; kwargs...) = $sname(DSP.$func(sz, par; kwargs...))
 
-        function $sname(sz::NTuple{3, Int}, par; kwargs...)
-            w2d = $sname(sz[1:2], par; kwargs...).weights
-            w3d = $sname(sz[end], par; kwargs...).weights
-            w = zeros(size(w2d)..., size(w3d)...)
-            for k in 1:sz[end]
-               @inbounds @. w[:,:,k] = w2d * w3d[k]
+        function $sname(sz::NTuple{N, Int}, par; kwargs...) where {N}
+            # weights for the first dimensions
+            wfd = weights($sname(sz[1:N - 1], par; kwargs...))
+            # weights for the last dimension
+            wld = weights($sname(sz[end], par; kwargs...))
+            w = zeros(size(wfd)..., size(wld)...)
+            for i in 1:sz[end]
+                v = selectdim(w, N, i)
+                @inbounds @. v = wfd * wld[i]
             end
             $sname(w)
         end
 
-        (apod::$sname)(A) = @. apod.weights * A
+        (apod::$sname)(A) = weights(apod) .* A
+
+        apodfunc(::Val{Symbol($st)}, sz, par; kwargs...) = $sname(sz, par; kwargs...)
     end
 end
 

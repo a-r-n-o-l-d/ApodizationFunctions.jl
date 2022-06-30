@@ -1,4 +1,5 @@
 using ApodizationFunctions
+using ApodizationFunctions: weights
 using DSP
 using Test
 
@@ -12,11 +13,11 @@ using Test
         @eval begin
             # Uni-dimensionnal tests
             apod = $sname($wsz)
-            @test all(apod.weights .== DSP.$func($wsz))
+            @test all(weights(apod) .== DSP.$func($wsz))
     
             # Bi-dimensionnal tests
             apod = $sname(($wsz, $wsz))
-            @test all(apod.weights .== DSP.$func(($wsz, $wsz)))
+            @test all(weights(apod) .== DSP.$func(($wsz, $wsz)))
     
             # Tri-dimensionnal tests
             A = rand($wsz, $wsz, $wsz)
@@ -27,20 +28,24 @@ using Test
             end
             apod = $sname(($wsz, $wsz, $wsz))
             @test all(apod(A) .≈ res)
+
+            # Test dispatch on apodfunc
+            @test all(weights(apodfunc(Symbol($st), ($wsz, $wsz, $wsz))) .== weights(apod))
         end
     end
     
     par = 0.5
     for func in (:tukey, :gaussian, :kaiser)
+        st = string(func)
         sname = Symbol("$(uppercasefirst(string(func)))Apodization")
         @eval begin
             # Uni-dimensionnal tests
             apod = $sname($wsz, $par)
-            @test all(apod.weights .== DSP.$func($wsz, $par))
+            @test all(weights(apod) .== DSP.$func($wsz, $par))
     
             # Bi-dimensionnal tests
             apod = $sname(($wsz, $wsz), $par)
-            @test all(apod.weights .== DSP.$func(($wsz, $wsz), $par))
+            @test all(weights(apod) .== DSP.$func(($wsz, $wsz), $par))
     
             # Tri-dimensionnal tests
             A = rand($wsz, $wsz, $wsz)
@@ -51,6 +56,9 @@ using Test
             end
             apod = $sname(($wsz, $wsz, $wsz), $par)
             @test all(apod(A) .≈ res)
+
+            # Test dispatch on apodfunc
+            @test all(weights(apodfunc(Symbol($st), ($wsz, $wsz, $wsz), $par)) .== weights(apod))
         end
-    end    
+    end
 end
