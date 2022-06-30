@@ -15,7 +15,7 @@ export  RectApodization,
         GaussianApodization,
         KaiserApodization
 
-abstract type ApodizationFunction end
+abstract type AbstractApodizationFunction end
 
 for func in (:rect, :hanning, :hamming, :cosine, :lanczos, :triang, :bartlett, :bartlett_hann, :blackman)
     st = string(func)
@@ -43,7 +43,7 @@ for func in (:rect, :hanning, :hamming, :cosine, :lanczos, :triang, :bartlett, :
         ...
         ```
         """
-        struct $sname{N, T<:Real} <: ApodizationFunction
+        struct $sname{N, T<:Real} <: AbstractApodizationFunction
             weights::Array{T, N}
         end
 
@@ -90,7 +90,7 @@ for func in (:tukey, :gaussian, :kaiser)
         ...
         ```
         """
-        struct $sname{N, T<:Real} <: ApodizationFunction
+        struct $sname{N, T<:Real} <: AbstractApodizationFunction
             weights::Array{T, N}
         end
 
