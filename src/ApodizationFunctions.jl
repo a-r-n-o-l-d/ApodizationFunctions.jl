@@ -20,6 +20,8 @@ abstract type AbstractApodizationFunction end
 
 weights(apod::AbstractApodizationFunction) = apod.weights
 
+Base.size(apod::AbstractApodizationFunction) = size(weights(apod))
+
 apodfunc(a::Symbol, sz; kwargs...) = apodfunc(Val{a}(), sz; kwargs...) # Val{a}() causes type unstability
 
 apodfunc(a::Symbol, sz, par; kwargs...) = apodfunc(Val{a}(), sz, par; kwargs...)
